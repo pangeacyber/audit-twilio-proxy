@@ -50,9 +50,18 @@ exports.handler = function(context, event, callback) {
     return callback(null, twiml);
   }
 
+  // The number the original message was sent to is the number of the proxy
+  var proxyNumber = event.To;
+
+  // Map the event details to the auditData object, for example, the source
+  // is set to the number that sent the message and the target is the recipient
   const auditData = {
-    actor: event.From,
+    actor: proxyNumber,
+    source: event.From,
+    target: destinationNumber,
     message: event.Body,
+    status: event.SmsStatus,
+    action: "forwarded"
   };
 
   // Log the message using the Pangea Audit service. Hashes of each message will
@@ -69,7 +78,7 @@ exports.handler = function(context, event, callback) {
 
         // Send the logged message to the destination number
         TwilioClient.messages
-          .create({body: event.Body, from: event.To, to: destinationNumber})
+          .create({body: event.Body, from: proxyNumber, to: destinationNumber})
           .then((response) => {
 
             console.log('SMS successfully sent');
